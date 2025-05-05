@@ -1,0 +1,80 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Шериф Камера Детекторы</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
+    h1 { color: darkred; }
+    #status { margin-top: 20px; font-size: 18px; }
+    #alert { margin-top: 20px; font-size: 24px; font-weight: bold; color: red; }
+  </style>
+</head>
+<body>
+  <h1>Шериф Камера Детекторы (Web нұсқа)</h1>
+  <p>GPS арқылы жақын камера бар-жоғын тексереді.</p>
+  <button onclick="checkLocation()">Орналасуды Тексеру</button>
+  <div id="status">Күту режимі...</div>
+  <div id="alert"></div>
+
+  <script>
+    // Мысал камералар координаттары (Aстана)
+    const cameras = [
+      { lat: 51.1605, lon: 71.4704 }, // орталық
+      { lat: 51.1750, lon: 71.4278 }, // Сарыарқа даңғылы
+      { lat: 51.1530, lon: 71.4700 }  // тағы бір жер
+    ];
+
+    function checkLocation() {
+      const status = document.getElementById("status");
+      const alertBox = document.getElementById("alert");
+      status.textContent = "Орналасу анықталуда...";
+      alertBox.textContent = "";
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          status.textContent = `Сіздің орныңыз: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+
+          let found = false;
+          cameras.forEach(cam => {
+            const dist = getDistanceFromLatLonInKm(lat, lon, cam.lat, cam.lon);
+            if (dist <= 0.3) { // 300 метр радиус
+              found = true;
+            }
+          });
+
+          if (found) {
+            alertBox.textContent = "НАЗАР АУДАР! Жақында ШЕРИФ КАМЕРАСЫ бар!";
+          } else {
+            alertBox.textContent = "Камера байқалмады.";
+          }
+
+        }, () => {
+          status.textContent = "Орналасуды алуға рұқсат жоқ.";
+        });
+      } else {
+        status.textContent = "Браузер GPS-ты қолдамайды.";
+      }
+    }
+
+    function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+      const R = 6371; // km
+      const dLat = deg2rad(lat2 - lat1);
+      const dLon = deg2rad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function deg2rad(deg) {
+      return deg * (Math.PI / 180);
+    }
+  </script>
+</body>
+</html>
